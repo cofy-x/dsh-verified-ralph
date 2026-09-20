@@ -9,7 +9,7 @@ const continued = { status: 'continue', summary: 'Working.', evidence: [], nextS
 const complete = { status: 'complete', summary: 'Done.', evidence: ['tests pass'], nextSteps: [], blocker: '' }
 const blocked = { status: 'blocked', summary: 'Blocked.', evidence: [], nextSteps: [], blocker: 'Need credentials.' }
 
-function setup(reports: unknown[], scores: number[], options: { remote?: boolean, snapshot?: boolean, stopReason?: string } = {}) {
+function setup(reports: unknown[], scores: number[], options: { remote?: boolean, stopReason?: string } = {}) {
   const requests: SubagentStartRequest[] = []
   let disposed = 0
   const verifier = {
@@ -30,7 +30,7 @@ function setup(reports: unknown[], scores: number[], options: { remote?: boolean
         id,
         localAgent: options.remote
           ? undefined
-          : { id, session: options.snapshot ? { snapshotEvents: () => events } : { events } },
+          : { id, session: { snapshotEvents: () => events } },
         result: Promise.resolve({ output: [], structured: report, stopReason: options.stopReason ?? 'completed' }),
         async dispose() { disposed += 1 },
       }
@@ -58,7 +58,7 @@ describe('verified Ralph runner', () => {
   })
 
   it('reads the current immutable Session snapshot API', async () => {
-    const test = setup([complete], [0.9], { snapshot: true })
+    const test = setup([complete], [0.9])
     const result = await runVerifiedRalph(test.ctx, resolveConfig({ maxRounds: 1 }), { objective: 'Ship it.' }, parent, new AbortController().signal)
     expect(result.status).toBe('verified-complete')
     expect(test.verifier.track).toHaveBeenCalledOnce()

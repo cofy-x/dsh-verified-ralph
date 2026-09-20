@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { dshCommit as EXPECTED_COMMIT, dshVersion as EXPECTED_VERSION } from './project.mjs'
 
-const EXPECTED_COMMIT = 'd347e703908d0406b7a7ef80e3a0e594d86b2215'
-const EXPECTED_VERSION = '0.1.3-alpha.1'
 const source = process.env.DSH_SOURCE_DIR
 if (!source) throw new Error('DSH_SOURCE_DIR must point to the checked-out deepseek-harness release')
 
@@ -24,6 +23,9 @@ for (const contract of [
   'readonly result: Promise<SubagentResult>',
   'readonly inheritsParentContext: boolean',
 ]) assert.match(subagentTypes, new RegExp(contract.replace(/[?*+()[\]{}\\|.^$]/g, '\\$&')), `missing subagent contract: ${contract}`)
+for (const capability of ['readonly depthLimit: boolean', 'readonly toolFilter: boolean', 'readonly persona: boolean']) {
+  assert.match(subagentTypes, new RegExp(capability), `missing subagent capability: ${capability}`)
+}
 
 const subagentService = await text('packages/subagent/subagent/src/index.ts')
 assert.match(subagentService, /getProvider\(name: string\): SubagentProvider \| undefined/, 'subagent provider lookup changed')
@@ -35,7 +37,7 @@ for (const event of ["'step/start'", "'assistant/message'", "'tool/call'", "'too
 }
 assert.match(session, /'assistant\/message': \{[\s\S]*message: AssistantMessage[\s\S]*stream: AssistantStreamRecord\[\][\s\S]*usage\?: TokenUsage/, 'assistant message projection shape changed')
 assert.match(session, /'tool\/call': \{ turn: number; step: number; callId: ToolCallId; name: string; arguments: string \}/, 'tool call projection shape changed')
-assert.match(session, /export const SESSION_FORMAT_VERSION = 2/, 'expected audited DSH Session format v2')
+assert.match(session, /export const SESSION_FORMAT_VERSION = 3/, 'expected audited DSH Session format v3')
 const sessionRuntime = await text('packages/core/session/src/index.ts')
 assert.match(sessionRuntime, /snapshotEvents\(/, 'immutable Session snapshot API changed')
 

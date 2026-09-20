@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs'
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { pinnedGitHubDependency } from './project.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const ignored = new Set(['.git', 'lib', 'node_modules'])
@@ -43,16 +44,17 @@ for (const required of [
   'src/invariant.ts',
   'docs/dsh-plugin-contracts.md',
   'scripts/git-install-smoke.mjs',
+  'scripts/project.mjs',
   'scripts/verify-release.mjs',
   'tests/plugin.spec.ts',
 ]) {
   if (!existsSync(join(root, required))) failures.push(`missing ${required}`)
 }
-const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-const verifierSpec = manifest.dependencies?.['dsh-as-a-verifier']
-if (verifierSpec !== 'git+https://github.com/omdsh-dev/dsh-as-a-verifier.git#359c41e6f3882c720c1d41f79d4f3ed6cb7d05f5') {
-  failures.push('dsh-as-a-verifier dependency is not pinned to the reviewed merge commit')
-}
+const provider = pinnedGitHubDependency('dsh-as-a-verifier')
+const workspaceConfig = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8')
+const exactProviderBuildKey = `dsh-as-a-verifier@https://codeload.github.com/${provider.repository}/tar.gz/${provider.commit}: true`
+if (!workspaceConfig.includes('blockExoticSubdeps: false')) failures.push('pnpm workspace must permit the pinned Git dependency edge')
+if (!workspaceConfig.includes(exactProviderBuildKey)) failures.push('pnpm workspace does not authorize the exact provider archive')
 if (failures.length > 0) {
   console.error(failures.join('\n'))
   process.exit(1)
