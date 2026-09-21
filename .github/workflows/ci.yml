@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04, windows-latest]
         node: ['24', '22.19.0']
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
@@ -40,7 +40,7 @@ jobs:
 
   git-install-smoke:
     name: git-install-smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24 runtime
@@ -56,7 +56,7 @@ jobs:
 
   dsh-contract:
     name: dsh-contract (dsh-v0.1.5-rc.2)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24 runtime
@@ -78,7 +78,7 @@ jobs:
 
   profile-install-smoke:
     name: profile-install-smoke (web, headless)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node 24 runtime
@@ -96,7 +96,7 @@ jobs:
     name: required
     if: ${{ always() }}
     needs: [quality, git-install-smoke, dsh-contract, profile-install-smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require every gate
         env:

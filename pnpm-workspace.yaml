@@ -5,5 +5,5 @@ autoInstallPeers: false
 blockExoticSubdeps: false
 
 allowBuilds:
-  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/933887b40653cce24b8197441700ce947f36ce4e: true
+  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/888fbb8cb39cd981611e52e02b37d0d49fe686b7: true
   esbuild: true
