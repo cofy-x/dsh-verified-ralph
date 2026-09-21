@@ -40,7 +40,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "dsh-as-a-verifier": "git+https://github.com/cofy-x/dsh-as-a-verifier.git#933887b40653cce24b8197441700ce947f36ce4e"
+    "dsh-as-a-verifier": "git+https://github.com/cofy-x/dsh-as-a-verifier.git#888fbb8cb39cd981611e52e02b37d0d49fe686b7"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.1-rc.1 <5.0.0",

@@ -38,7 +38,7 @@ Headless 使用对应 profile。由于本 Git package 有意固定依赖另一�
 blockExoticSubdeps: false
 allowBuilds:
   dsh-verified-ralph@https://codeload.github.com/cofy-x/dsh-verified-ralph/tar.gz/<verified-ralph-commit>: true
-  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/933887b40653cce24b8197441700ce947f36ce4e: true
+  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/888fbb8cb39cd981611e52e02b37d0d49fe686b7: true
 ```
 
 将 `<verified-ralph-commit>` 替换为实际安装的 commit；升级后复制 pnpm 输出的精确内容寻址键。这里有意不使用包名级的宽泛构建授权。bundle 只插入 `dsh-verified-ralph`；verifier row 与凭据由部署单独管理。

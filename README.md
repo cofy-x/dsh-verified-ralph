@@ -38,7 +38,7 @@ Use the corresponding Headless profile commands when appropriate. Because this G
 blockExoticSubdeps: false
 allowBuilds:
   dsh-verified-ralph@https://codeload.github.com/cofy-x/dsh-verified-ralph/tar.gz/<verified-ralph-commit>: true
-  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/933887b40653cce24b8197441700ce947f36ce4e: true
+  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/888fbb8cb39cd981611e52e02b37d0d49fe686b7: true
 ```
 
 Replace `<verified-ralph-commit>` with the installed commit and copy pnpm's exact content-addressed keys after an update. Package-name-wide build approval is intentionally not used. The bundle inserts only `dsh-verified-ralph`; deployment owns the separate verifier row and credentials.

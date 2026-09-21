@@ -4,7 +4,7 @@
 `dsh-v0.1.5-rc.2` at commit
 `fb2c4b9e698e30edb738bca4cf0618587db7d203`, and against
 `dsh-as-a-verifier` 0.2.7 at merge commit
-`933887b40653cce24b8197441700ce947f36ce4e`.
+`888fbb8cb39cd981611e52e02b37d0d49fe686b7`.
 
 The audit confirms that the one-shot fresh-agent seam still exposes provider
 capabilities (including the newer depth, tool-filter, and persona flags),
