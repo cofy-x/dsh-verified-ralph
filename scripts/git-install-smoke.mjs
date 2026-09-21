@@ -1,22 +1,25 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import { spawnSync } from 'node:child_process'
+import {
+  argument,
+  assertGitHubRepository,
+  assertPnpmVersion,
+  manifest as expected,
+  packageName as PACKAGE_NAME,
+  pinnedGitHubDependency,
+  repository as DEFAULT_REPOSITORY,
+  root,
+} from './project.mjs'
 
-const PACKAGE_NAME = 'dsh-verified-ralph'
-const REPOSITORY = 'omdsh-dev/dsh-verified-ralph'
 const PROVIDER_NAME = 'dsh-as-a-verifier'
-const PROVIDER_REPOSITORY = 'omdsh-dev/dsh-as-a-verifier'
-const PROVIDER_COMMIT = '359c41e6f3882c720c1d41f79d4f3ed6cb7d05f5'
-const root = dirname(dirname(fileURLToPath(import.meta.url)))
-
-function argument(name) {
-  const index = process.argv.indexOf(name)
-  if (index < 0 || index + 1 >= process.argv.length) throw new Error(`missing ${name}`)
-  return process.argv[index + 1]
-}
+const provider = pinnedGitHubDependency(PROVIDER_NAME)
+const PROVIDER_REPOSITORY = provider.repository
+const PROVIDER_COMMIT = provider.commit
+const REPOSITORY = assertGitHubRepository(argument('--repository', { required: false }) ?? DEFAULT_REPOSITORY)
 
 function run(command, args, cwd) {
   const executable = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command
@@ -41,11 +44,8 @@ const resolvedCommit = exactCommitPattern.test(ref)
   : capture('git', ['rev-parse', `${ref}^{commit}`], root)
 if (!exactCommitPattern.test(resolvedCommit)) throw new Error(`could not resolve ${ref} to an exact commit`)
 
-const expected = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-const expectedProviderSpec = `git+https://github.com/${PROVIDER_REPOSITORY}.git#${PROVIDER_COMMIT}`
-if (expected.dependencies?.[PROVIDER_NAME] !== expectedProviderSpec) {
-  throw new Error('consumer manifest does not pin the reviewed provider commit')
-}
+assertPnpmVersion()
+const expectedProviderSpec = provider.spec
 const peerNames = new Set([
   ...Object.keys(expected.peerDependencies ?? {}),
   '@deepseek-ai/dsh-atomic-write',
@@ -96,7 +96,7 @@ try {
   const providerEntry = consumerRequire.resolve(PROVIDER_NAME)
   const providerRoot = dirname(dirname(providerEntry))
   const providerManifest = JSON.parse(readFileSync(join(providerRoot, 'package.json'), 'utf8'))
-  if (providerManifest.version !== '0.2.6') throw new Error(`installed provider version ${providerManifest.version} is not 0.2.6`)
+  if (providerManifest.name !== PROVIDER_NAME) throw new Error(`installed provider has unexpected package name ${String(providerManifest.name)}`)
   const provider = await import(`${pathToFileURL(providerEntry).href}?smoke=${Date.now()}`)
   if (provider.VERIFIER_PROTOCOL_VERSION !== 1) throw new Error('installed provider does not publish verifier protocol 1')
   if (provider.VERIFIER_CAPABILITIES?.offlineProgressTracking !== true) {

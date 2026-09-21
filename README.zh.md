@@ -4,30 +4,32 @@
 
 `dsh-verified-ralph` 是独立的 DeepSeek Harness function plugin，在官方 `ralph` 之外新增 `verified_ralph`。每个 Round 都启动共享工作区上的全新本地 child，将其不可变 DSH session 投影为可观察轨迹，再通过 `ctx.verifier` 独立评分任务完成进展。
 
-插件不修改 DSH core，也不重新定义 verifier API。可复现构建依赖固定到 `dsh-as-a-verifier` merge commit `359c41e6f3882c720c1d41f79d4f3ed6cb7d05f5`（release `v0.2.6`）；运行时要求 verifier protocol 1 与离线 progress tracking。底层 progress 方法源自 llm-as-a-verifier（<https://github.com/llm-as-a-verifier/llm-as-a-verifier>）的 commit `8db8a114355a9d7fdf9a8d1d5c87f6aeebd18770`。归属见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+插件不修改 DSH core，也不重新定义 verifier API。构建时固定经过审核的 `dsh-as-a-verifier` commit，运行时要求 verifier protocol 1 与离线 progress tracking；详见[兼容性基线](docs/dsh-compatibility.md)。上游归属见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 安装
 
-一起安装两个 bundle 默认分支的最新版本。两个仓库都保持 `private: true` npm package，通过 Git/profile 安装：
+同时安装两个 Git bundle；二者都不发布到 npm：
 
 ```sh
 dsh plugin --profile web add \
-  github:omdsh-dev/dsh-as-a-verifier \
-  github:omdsh-dev/dsh-verified-ralph
+  github:cofy-x/dsh-as-a-verifier \
+  github:cofy-x/dsh-verified-ralph
 ```
 
-Profile lockfile 会固定安装时解析到的 commit，重启不会静默追踪新提交。升级需要显式执行，并在完成后重启 Profile：
+Profile lockfile 会固定解析出的 commit。升级需显式执行，并在完成后重启 Profile：
 
 ```sh
 dsh plugin --profile web update dsh-as-a-verifier dsh-verified-ralph
 ```
 
-需要稳定复现的生产部署应固定不可移动的 release tag：
+需要稳定复现的部署应从两个仓库的 Releases 页面选择不可移动的 tag：
 
 ```sh
+VERIFIER_TAG=vX.Y.Z
+RALPH_TAG=vX.Y.Z
 dsh plugin --profile web add \
-  github:omdsh-dev/dsh-as-a-verifier#v0.2.6 \
-  github:omdsh-dev/dsh-verified-ralph#v0.2.1
+  "github:cofy-x/dsh-as-a-verifier#$VERIFIER_TAG" \
+  "github:cofy-x/dsh-verified-ralph#$RALPH_TAG"
 ```
 
 Headless 使用对应 profile。由于本 Git package 有意固定依赖另一个 Git package，pnpm 11 调用方需要显式允许这条已审计的依赖边和两次 prepare 构建：
@@ -35,11 +37,11 @@ Headless 使用对应 profile。由于本 Git package 有意固定依赖另一�
 ```yaml
 blockExoticSubdeps: false
 allowBuilds:
-  dsh-verified-ralph@https://codeload.github.com/omdsh-dev/dsh-verified-ralph/tar.gz/<verified-ralph-commit>: true
-  dsh-as-a-verifier@https://codeload.github.com/omdsh-dev/dsh-as-a-verifier/tar.gz/359c41e6f3882c720c1d41f79d4f3ed6cb7d05f5: true
+  dsh-verified-ralph@https://codeload.github.com/cofy-x/dsh-verified-ralph/tar.gz/<verified-ralph-commit>: true
+  dsh-as-a-verifier@https://codeload.github.com/cofy-x/dsh-as-a-verifier/tar.gz/933887b40653cce24b8197441700ce947f36ce4e: true
 ```
 
-将 `<verified-ralph-commit>` 替换为实际安装的 commit；跟随更新后的默认分支时，始终复制 pnpm 当前打印的精确 key。Release tag 只从验证完成的 `main` merge 创建且绝不移动；兼容修复提升 patch，公共编排能力提升 minor，不兼容的 verifier protocol 要求提升 major。bundle 只插入 `dsh-verified-ralph`；verifier row 与凭据由部署单独管理。
+将 `<verified-ralph-commit>` 替换为实际安装的 commit；升级后复制 pnpm 输出的精确内容寻址键。这里有意不使用包名级的宽泛构建授权。bundle 只插入 `dsh-verified-ralph`；verifier row 与凭据由部署单独管理。
 
 ## 合同
 
@@ -96,6 +98,7 @@ canonical result 包含运行状态与计数、最终 report、每个 child id/�
 ## 开发
 
 ```sh
+corepack enable pnpm
 pnpm install
 pnpm run verify:self-contained
 pnpm run typecheck
@@ -104,11 +107,11 @@ pnpm run build
 pnpm run prepare
 ```
 
-所有 PR 与 `main` push 都会在 Ubuntu/Windows 上以 Node 24 和精确最低版本 Node 22.19.0 运行完整矩阵，并以 Node 24 执行精确 commit Git-install 与真实 Web/Headless Profile 安装 smoke。Profile smoke 将两个插件安装进 npm 当前最新的 DSH CLI（`0.1.2-rc.1`），检查 peers、官方 `ralph` 与 `verified_ralph` 共存，并让两个 surface 通过 help 路径干净退出。独立的源码合同门禁固定到已审查的 DSH `dsh-v0.1.3-alpha.1`（`d347e703908d0406b7a7ef80e3a0e594d86b2215`），验证 one-shot subagent、child token limit、usage 与 Session v2 seam；由于该 alpha 尚未发布到 npm，这两个验证目标有意分开维护。CI 保持无密钥。
+已审核的 DSH/Node/pnpm 与 provider 基线记录在 [docs/dsh-compatibility.md](docs/dsh-compatibility.md)。CI 在 Linux、Windows 上运行 keyless suite，从 PR 的精确 commit 验证安装（包括 fork PR），并在干净的 Web、Headless Profile 中同时启动两个插件与官方 `ralph`。
 
 带凭据的发布门禁为 `pnpm run test:e2e:full -- --ref <exact-consumer-sha> --evidence <output.json>`。它把精确 Git commit 安装进临时 Headless Profile，并执行完整 parent → `verified_ralph` → 真实 `spawn` child → 共享工作区 → durable SessionEvent → DeepSeek verifier → policy 链路。evidence 使用 `dsh-verified-ralph-release-evidence/v1`，仅包含精确组件身份、endpoint 类型、模型、usage 计数、终止状态、分数、预算原因、运行环境和耗时；绝不包含 API key、objective、prompt、report、轨迹、工具参数/结果、run id 或 child id。
 
-发布保持人工流程：维护者先对当前 `main` 精确 SHA 与版本手工触发 `release-check`，等待所有 keyless 门禁和 Git 安装通过，再创建 annotated tag；tag 会再次触发同一个只读检查，通过后为不可变 tag 发布非 draft、非 prerelease 的 GitHub Release。Actions 不创建或移动 tag，npm 也不是发布渠道。只有 backend、prompt 或 decoder 行为变化时，才要求在本地执行真实 API E2E。
+发布保持人工、仅 Git：先用 `release-check` 验证精确 `main` SHA，再创建不可移动的 annotated tag；tag 检查通过后发布非 draft 的 GitHub Release。backend、prompt 或 decoder 行为变化时，必须运行本地真实 API E2E。
 
 ## 边界
 

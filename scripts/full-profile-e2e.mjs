@@ -3,36 +3,21 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { spawnSync } from 'node:child_process'
+import {
+  argument,
+  assertPnpmVersion,
+  dshCommit as DSH_COMMIT,
+  dshVersion as DSH_VERSION,
+  packageName as CONSUMER_NAME,
+  pinnedGitHubDependency,
+  repository as CONSUMER_REPOSITORY,
+  run,
+} from './project.mjs'
 
-const DSH_VERSION = '0.1.2-rc.1'
-const DSH_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
-const CONSUMER_NAME = 'dsh-verified-ralph'
-const CONSUMER_REPOSITORY = 'omdsh-dev/dsh-verified-ralph'
 const PROVIDER_NAME = 'dsh-as-a-verifier'
-const PROVIDER_REPOSITORY = 'omdsh-dev/dsh-as-a-verifier'
-const PROVIDER_COMMIT = '359c41e6f3882c720c1d41f79d4f3ed6cb7d05f5'
-
-function argument(name) {
-  const index = process.argv.indexOf(name)
-  if (index < 0 || index + 1 >= process.argv.length) throw new Error(`missing ${name}`)
-  return process.argv[index + 1]
-}
-
-function run(command, args, options = {}) {
-  const executable = process.platform === 'win32' && command === 'pnpm' ? 'pnpm.cmd' : command
-  const result = spawnSync(executable, args, {
-    cwd: options.cwd,
-    env: options.env,
-    encoding: 'utf8',
-    timeout: options.timeout ?? 120_000,
-  })
-  if (result.error !== undefined) throw result.error
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed (${result.status})\n${result.stdout}\n${result.stderr}`)
-  }
-  return `${result.stdout}${result.stderr}`
-}
+const provider = pinnedGitHubDependency(PROVIDER_NAME)
+const PROVIDER_REPOSITORY = provider.repository
+const PROVIDER_COMMIT = provider.commit
 
 function filesBelow(root) {
   const files = []
@@ -85,6 +70,7 @@ if (!apiKey) {
 const consumerCommit = argument('--ref')
 const evidencePath = resolve(argument('--evidence'))
 if (!/^[0-9a-f]{40}$/.test(consumerCommit)) throw new Error('full e2e ref must be an exact commit SHA')
+assertPnpmVersion()
 
 const workspace = mkdtempSync(join(tmpdir(), 'dsh-verified-ralph-full-e2e-'))
 const launcher = join(workspace, 'launcher')
@@ -108,7 +94,7 @@ try {
     'allowBuilds:',
     `  '@deepseek-ai/dsh-subprocess-local@${DSH_VERSION}': true`,
     "  '@google/genai@1.52.0': true",
-    "  'koffi@3.2.0': true",
+    "  'koffi@3.3.1': true",
     "  'node-pty@1.2.0-beta.15': true",
     "  'protobufjs@7.6.6': true",
     '',
